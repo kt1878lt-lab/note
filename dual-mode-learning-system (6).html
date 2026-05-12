@@ -1,0 +1,2464 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學習筆記 · 知識的溫柔歸處</title>
+    
+    <!-- Firebase SDK v9+ -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cream: #faf8f3;
+            --warm-white: #fffef9;
+            --sage: #8b9d83;
+            --sage-dark: #6b7d63;
+            --sage-light: #a8b89f;
+            --terracotta: #d4a373;
+            --clay: #b08968;
+            --rust: #c67b5c;
+            --charcoal: #3d3d3d;
+            --ink: #2a2a2a;
+            --soft-gray: #e8e6e0;
+            --warm-gray: #c9c5ba;
+            --complete-green: #7ea16b;
+            --pending-amber: #d9a866;
+            
+            --font-serif: 'Noto Serif TC', serif;
+            --font-sans: 'Noto Sans TC', sans-serif;
+            
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
+            --shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.12);
+            
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--cream);
+            color: var(--ink);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 15% 20%, rgba(139, 157, 131, 0.04) 0%, transparent 50%),
+                radial-gradient(circle at 85% 80%, rgba(212, 163, 115, 0.04) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* ================ 配置與登入介面 ================ */
+        .auth-container {
+            min-height: 100vh;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .auth-box {
+            background: var(--warm-white);
+            padding: 3rem 2.5rem;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-strong);
+            max-width: 540px;
+            width: 100%;
+            border: 1px solid rgba(139, 157, 131, 0.12);
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-ornament {
+            text-align: center;
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            animation: float 3.5s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+
+        .auth-title {
+            font-family: var(--font-serif);
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--sage-dark);
+            text-align: center;
+            margin-bottom: 0.75rem;
+            letter-spacing: 1px;
+        }
+
+        .auth-subtitle {
+            color: var(--clay);
+            text-align: center;
+            margin-bottom: 2.5rem;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--charcoal);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label .required {
+            color: var(--rust);
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.875rem 1.125rem;
+            border: 1.5px solid var(--soft-gray);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: var(--font-sans);
+            background: white;
+            color: var(--ink);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--sage);
+            box-shadow: 0 0 0 3px rgba(139, 157, 131, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 180px;
+            line-height: 1.7;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1.125rem 2rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            font-family: var(--font-sans);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .btn-google {
+            background: white;
+            border: 2px solid var(--soft-gray);
+            color: var(--charcoal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.875rem;
+        }
+
+        .btn-google:hover {
+            border-color: var(--sage);
+            background: var(--warm-white);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .google-icon {
+            width: 22px;
+            height: 22px;
+        }
+
+        .help-note {
+            margin-top: 2rem;
+            padding: 1.25rem;
+            background: linear-gradient(135deg, rgba(139, 157, 131, 0.06) 0%, rgba(212, 163, 115, 0.06) 100%);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--sage);
+            font-size: 0.85rem;
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .reset-config {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--warm-gray);
+        }
+
+        .reset-config button {
+            background: none;
+            border: none;
+            color: var(--clay);
+            text-decoration: underline;
+            cursor: pointer;
+            font-family: var(--font-sans);
+        }
+
+        /* ================ 主應用介面 ================ */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 頂部導航 */
+        .header {
+            background: rgba(250, 248, 243, 0.97);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(139, 157, 131, 0.15);
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--sage-dark);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 0.625rem;
+        }
+
+        .logo-icon {
+            font-size: 1.875rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: var(--charcoal);
+            font-size: 0.95rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2.5px solid var(--sage);
+            object-fit: cover;
+        }
+
+        .logout-btn {
+            background: transparent;
+            border: 1.5px solid var(--soft-gray);
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            font-family: var(--font-sans);
+            color: var(--charcoal);
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: var(--warm-white);
+            border-color: var(--sage);
+        }
+
+        /* 模式切換 */
+        .mode-switch {
+            max-width: 1600px;
+            margin: 2rem auto 0;
+            padding: 0 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: var(--warm-white);
+            border: 2px solid var(--soft-gray);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: var(--font-sans);
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--charcoal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.625rem;
+        }
+
+        .mode-btn:hover {
+            border-color: var(--sage);
+            background: white;
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            border-color: var(--sage);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .mode-icon {
+            font-size: 1.25rem;
+        }
+
+        /* 主要內容 */
+        .main-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            position: sticky;
+            top: 110px;
+            height: fit-content;
+        }
+
+        .quick-add-btn {
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1.125rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 2rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: var(--shadow-subtle);
+            font-family: var(--font-sans);
+        }
+
+        .quick-add-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1.125rem 1rem 3.25rem;
+            border: 1.5px solid var(--soft-gray);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: var(--font-sans);
+            background: var(--warm-white);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--sage);
+            box-shadow: 0 0 0 3px rgba(139, 157, 131, 0.1);
+            background: white;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1.125rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.125rem;
+            color: var(--warm-gray);
+        }
+
+        .categories {
+            background: var(--warm-white);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-subtle);
+            border: 1px solid rgba(139, 157, 131, 0.1);
+        }
+
+        .categories-title {
+            font-family: var(--font-serif);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            color: var(--clay);
+            margin-bottom: 1.25rem;
+            text-transform: uppercase;
+        }
+
+        .category-item {
+            padding: 0.875rem 1.125rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.625rem;
+            border: 1px solid transparent;
+        }
+
+        .category-item:hover {
+            background: var(--cream);
+            border-color: var(--soft-gray);
+        }
+
+        .category-item.active {
+            background: var(--sage);
+            color: white;
+            border-color: var(--sage);
+        }
+
+        .category-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .category-count {
+            background: rgba(0, 0, 0, 0.12);
+            padding: 0.25rem 0.7rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .category-item.active .category-count {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* 筆記/任務列表 */
+        .content-container {
+            animation: slideInRight 0.5s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--soft-gray);
+        }
+
+        .content-title {
+            font-family: var(--font-serif);
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--sage-dark);
+        }
+
+        .content-meta {
+            text-align: right;
+            color: var(--clay);
+            font-size: 0.9rem;
+        }
+
+        .content-count {
+            font-weight: 600;
+            color: var(--sage-dark);
+            font-size: 1.125rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 2rem;
+        }
+
+        /* 筆記卡片 */
+        .note-card {
+            background: var(--warm-white);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-subtle);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            border: 1px solid rgba(139, 157, 131, 0.12);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInScale 0.5s ease-out backwards;
+        }
+
+        .note-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--sage) 0%, var(--terracotta) 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .note-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .note-card:nth-child(1) { animation-delay: 0.05s; }
+        .note-card:nth-child(2) { animation-delay: 0.1s; }
+        .note-card:nth-child(3) { animation-delay: 0.15s; }
+        .note-card:nth-child(4) { animation-delay: 0.2s; }
+        .note-card:nth-child(5) { animation-delay: 0.25s; }
+        .note-card:nth-child(6) { animation-delay: 0.3s; }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .note-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-medium);
+            border-color: var(--sage);
+        }
+
+        .note-card:hover .card-actions {
+            opacity: 1;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .action-btn {
+            background: var(--warm-white);
+            border: 1.5px solid var(--soft-gray);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            color: var(--charcoal);
+        }
+
+        .action-btn:hover {
+            background: white;
+            border-color: var(--sage);
+            transform: scale(1.1);
+        }
+
+        .action-btn.delete:hover {
+            background: rgba(198, 123, 92, 0.1);
+            border-color: var(--rust);
+            color: var(--rust);
+        }
+
+        .note-category {
+            display: inline-block;
+            padding: 0.4rem 0.875rem;
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .note-title {
+            font-family: var(--font-serif);
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.875rem;
+            color: var(--ink);
+            line-height: 1.5;
+        }
+
+        .note-content {
+            color: var(--charcoal);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 1.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .note-highlights {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .highlight-tag {
+            background: rgba(212, 163, 115, 0.15);
+            color: var(--clay);
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid rgba(212, 163, 115, 0.25);
+        }
+
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--warm-gray);
+            font-size: 0.85rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--soft-gray);
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            background: linear-gradient(135deg, rgba(139, 157, 131, 0.12) 0%, rgba(212, 163, 115, 0.12) 100%);
+            padding: 0.25rem 0.625rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--sage-dark);
+            font-weight: 500;
+        }
+
+        /* 待學習任務卡片 */
+        .task-card {
+            background: var(--warm-white);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-subtle);
+            transition: all 0.4s ease;
+            border: 1px solid rgba(139, 157, 131, 0.12);
+            animation: fadeInScale 0.5s ease-out backwards;
+            display: flex;
+            gap: 1.25rem;
+            position: relative;
+        }
+
+        .task-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .task-card:hover .task-actions {
+            opacity: 1;
+        }
+
+        .task-card.completed {
+            background: linear-gradient(135deg, rgba(126, 161, 107, 0.08) 0%, rgba(139, 157, 131, 0.08) 100%);
+            border-left: 3px solid var(--complete-green);
+        }
+
+        .task-card.completed .task-title {
+            color: var(--charcoal);
+            /* 移除刪除線，保持可讀性 */
+        }
+
+        .task-card.completed .task-description {
+            color: var(--charcoal);
+        }
+
+        .task-actions {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            gap: 0.5rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .task-checkbox-wrapper {
+            flex-shrink: 0;
+        }
+
+        .task-checkbox {
+            width: 28px;
+            height: 28px;
+            border: 2.5px solid var(--sage);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .task-checkbox:hover {
+            background: rgba(139, 157, 131, 0.1);
+            transform: scale(1.1);
+        }
+
+        .task-checkbox.checked {
+            background: var(--complete-green);
+            border-color: var(--complete-green);
+        }
+
+        .task-checkbox .checkmark {
+            display: none;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .task-checkbox.checked .checkmark {
+            display: block;
+        }
+
+        .task-content-wrapper {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .task-title {
+            font-family: var(--font-serif);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.4;
+            flex: 1;
+        }
+
+        .task-category {
+            padding: 0.3rem 0.75rem;
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 1rem;
+            flex-shrink: 0;
+        }
+
+        .task-description {
+            color: var(--charcoal);
+            font-size: 0.9rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 0.875rem;
+            border-top: 1px solid var(--soft-gray);
+        }
+
+        .task-date {
+            font-size: 0.85rem;
+            color: var(--warm-gray);
+        }
+
+        .task-status {
+            padding: 0.25rem 0.625rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .task-status.pending {
+            background: rgba(217, 168, 102, 0.15);
+            color: var(--pending-amber);
+        }
+
+        .task-status.completed {
+            background: rgba(126, 161, 107, 0.15);
+            color: var(--complete-green);
+        }
+
+        /* 空狀態 */
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+            color: var(--warm-gray);
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.4;
+        }
+
+        .empty-state h3 {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
+            color: var(--charcoal);
+            margin-bottom: 0.5rem;
+        }
+
+        /* 模態框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(42, 42, 42, 0.65);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--warm-white);
+            border-radius: var(--radius-xl);
+            padding: 2.5rem;
+            max-width: 680px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-strong);
+            border: 1px solid rgba(139, 157, 131, 0.15);
+            animation: modalSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1.25rem;
+            border-bottom: 2px solid var(--soft-gray);
+        }
+
+        .modal-title {
+            font-family: var(--font-serif);
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--sage-dark);
+        }
+
+        .close-btn {
+            background: var(--cream);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--charcoal);
+            transition: all 0.3s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .close-btn:hover {
+            background: var(--soft-gray);
+            transform: rotate(90deg);
+        }
+
+        .ai-tag-section {
+            background: linear-gradient(135deg, rgba(139, 157, 131, 0.06) 0%, rgba(212, 163, 115, 0.06) 100%);
+            padding: 1.5rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.75rem;
+            border: 1px solid rgba(139, 157, 131, 0.15);
+        }
+
+        .ai-tag-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .ai-tag-title {
+            font-weight: 600;
+            color: var(--sage-dark);
+            font-size: 0.95rem;
+        }
+
+        .ai-status {
+            font-size: 0.8rem;
+            color: var(--clay);
+            padding: 0.25rem 0.75rem;
+            background: rgba(212, 163, 115, 0.15);
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .ai-generating {
+            display: none;
+            align-items: center;
+            gap: 0.625rem;
+            color: var(--clay);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .ai-generating.show {
+            display: flex;
+        }
+
+        .ai-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid var(--soft-gray);
+            border-top: 2.5px solid var(--sage);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .highlights-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.625rem;
+            margin-top: 1rem;
+        }
+
+        .highlight-item {
+            background: rgba(212, 163, 115, 0.2);
+            color: var(--clay);
+            padding: 0.5rem 0.875rem;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid rgba(212, 163, 115, 0.3);
+            font-weight: 500;
+        }
+
+        .remove-highlight {
+            background: none;
+            border: none;
+            color: var(--clay);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0;
+            opacity: 0.7;
+        }
+
+        .remove-highlight:hover {
+            opacity: 1;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1.125rem 2rem;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.4s ease;
+            font-family: var(--font-sans);
+            box-shadow: var(--shadow-subtle);
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            color: var(--warm-gray);
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid var(--soft-gray);
+            border-top: 3px solid var(--sage);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        .error-message {
+            background: rgba(198, 123, 92, 0.12);
+            border: 1px solid rgba(198, 123, 92, 0.3);
+            color: var(--rust);
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* ================ 響應式設計 ================ */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 260px 1fr;
+                gap: 2rem;
+                padding: 2rem 1.5rem;
+            }
+
+            .content-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .content-title {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 1.25rem 1.5rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .user-name {
+                display: none;
+            }
+
+            .mode-switch {
+                padding: 0 1.5rem;
+                margin-top: 1.5rem;
+            }
+
+            .mode-btn {
+                padding: 0.875rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .mode-icon {
+                font-size: 1.125rem;
+            }
+
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+                padding: 1.5rem;
+            }
+
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+
+            .content-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .content-meta {
+                text-align: left;
+            }
+
+            .content-title {
+                font-size: 1.875rem;
+            }
+
+            .content-grid {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+            }
+
+            .modal-content {
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.125rem;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+            }
+
+            .logout-btn {
+                padding: 0.5rem 0.875rem;
+                font-size: 0.85rem;
+            }
+
+            .mode-switch {
+                padding: 0 1rem;
+                flex-direction: column;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .quick-add-btn {
+                padding: 1rem;
+                font-size: 0.95rem;
+            }
+
+            .content-title {
+                font-size: 1.5rem;
+            }
+
+            .note-card, .task-card {
+                padding: 1.5rem;
+            }
+
+            .note-title, .task-title {
+                font-size: 1.15rem;
+            }
+
+            .auth-box {
+                padding: 2.5rem 1.75rem;
+            }
+
+            .auth-title {
+                font-size: 1.875rem;
+            }
+
+            .modal-content {
+                padding: 1.75rem 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ================ 配置設定介面 ================ -->
+    <div class="auth-container" id="configScreen">
+        <div class="auth-box">
+            <div class="auth-ornament">🔧</div>
+            <h1 class="auth-title">初次設定</h1>
+            <p class="auth-subtitle">請設定 Firebase 連線資訊</p>
+
+            <div class="error-message" id="configError"></div>
+
+            <form id="configForm">
+                <div class="form-group">
+                    <label class="form-label">API Key <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="apiKey" placeholder="AIzaSy..." required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Auth Domain <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="authDomain" placeholder="your-project.firebaseapp.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Database URL <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="databaseURL" placeholder="https://your-project.firebaseio.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Project ID <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="projectId" placeholder="your-project-id" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Storage Bucket <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="storageBucket" placeholder="your-project.appspot.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Messaging Sender ID <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="messagingSenderId" placeholder="123456789012" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">App ID <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="appId" placeholder="1:123456789012:web:abc..." required>
+                </div>
+                <button type="submit" class="btn btn-primary">儲存並繼續</button>
+                
+                <div class="help-note">
+                    <strong>💡 取得配置資訊</strong>
+                    前往 <a href="https://console.firebase.google.com/" target="_blank" style="color: var(--sage-dark);">Firebase Console</a> → 專案設定 → 你的應用程式 → 複製 firebaseConfig
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================ 登入介面 ================ -->
+    <div class="auth-container" id="loginScreen">
+        <div class="auth-box">
+            <div class="auth-ornament">🌿</div>
+            <h1 class="auth-title">學習筆記</h1>
+            <p class="auth-subtitle">知識的溫柔歸處</p>
+
+            <div class="error-message" id="loginError"></div>
+
+            <button class="btn-google" id="googleLoginBtn">
+                <svg class="google-icon" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                使用 Google 帳號登入
+            </button>
+
+            <div class="reset-config">
+                <button type="button" id="resetConfigBtn">重新設定 Firebase</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================ 主應用介面 ================ -->
+    <div class="app-container" id="appContainer">
+        <!-- 頂部導航 -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🌿</span>
+                    <span>學習筆記</span>
+                </div>
+                <div class="user-info">
+                    <span class="user-name" id="userName"></span>
+                    <img id="userAvatar" class="user-avatar" src="" alt="">
+                    <button class="logout-btn" id="logoutBtn">登出</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 模式切換 -->
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="notes">
+                <span class="mode-icon">📝</span>
+                <span>學習筆記</span>
+            </button>
+            <button class="mode-btn" data-mode="tasks">
+                <span class="mode-icon">📚</span>
+                <span>待學習清單</span>
+            </button>
+        </div>
+
+        <!-- 主要內容 -->
+        <div class="main-content">
+            <!-- 側邊欄 -->
+            <aside class="sidebar">
+                <button class="quick-add-btn" id="quickAddBtn">
+                    <span id="addBtnText">✨ 新增筆記</span>
+                </button>
+
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="searchInput" placeholder="搜尋...">
+                </div>
+
+                <div class="categories">
+                    <div class="categories-title" id="categoriesTitle">筆記分類</div>
+                    <div id="categoriesList">
+                        <!-- 動態生成 -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 內容區域 -->
+            <main class="content-container">
+                <div class="content-header">
+                    <h1 class="content-title" id="contentTitle">全部筆記</h1>
+                    <div class="content-meta">
+                        共 <span class="content-count" id="contentCount">0</span> 則
+                    </div>
+                </div>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>載入中...</p>
+                </div>
+
+                <div class="content-grid" id="contentGrid"></div>
+
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon" id="emptyIcon">🌾</div>
+                    <h3 id="emptyTitle">還沒有筆記</h3>
+                    <p id="emptyText">點擊「新增筆記」開始記錄學習重點</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ================ 筆記模態框 ================ -->
+    <div class="modal" id="noteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="noteModalTitle">新增筆記</h2>
+                <button class="close-btn" id="closeNoteModal">×</button>
+            </div>
+
+            <form id="noteForm">
+                <div class="form-group">
+                    <label class="form-label">筆記標題</label>
+                    <input type="text" class="form-input" id="noteTitle" placeholder="記錄你學到的重點" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">分類</label>
+                    <select class="form-select" id="noteCategory" required>
+                        <option value="">選擇分類</option>
+                        <option value="家政學習">🏠 家政學習</option>
+                        <option value="教學方法">📚 教學方法</option>
+                        <option value="課程重點">💡 課程重點</option>
+                        <option value="統計方式">📊 統計方式</option>
+                        <option value="其他">📝 其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">筆記內容</label>
+                    <textarea class="form-textarea" id="noteContent" placeholder="記錄學習重點..." required></textarea>
+                </div>
+
+                <div class="ai-tag-section">
+                    <div class="ai-tag-header">
+                        <span class="ai-tag-title">✨ AI 智能標籤</span>
+                        <span class="ai-status">自動分析</span>
+                    </div>
+                    <p style="color: var(--warm-gray); font-size: 0.9rem;">AI 會根據內容自動提取關鍵字</p>
+                    <div class="ai-generating" id="aiGenerating">
+                        <div class="ai-spinner"></div>
+                        <span>分析中...</span>
+                    </div>
+                    <div class="highlights-list" id="highlightsList"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="noteSubmitBtn">儲存筆記</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================ 待學習任務模態框 ================ -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="taskModalTitle">新增待學習項目</h2>
+                <button class="close-btn" id="closeTaskModal">×</button>
+            </div>
+
+            <form id="taskForm">
+                <div class="form-group">
+                    <label class="form-label">要學習的內容</label>
+                    <input type="text" class="form-input" id="taskTitle" placeholder="例：什麼是 Bloom 教學目標分類法？" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">分類</label>
+                    <select class="form-select" id="taskCategory" required>
+                        <option value="">選擇分類</option>
+                        <option value="家政學習">🏠 家政學習</option>
+                        <option value="教學方法">📚 教學方法</option>
+                        <option value="課程重點">💡 課程重點</option>
+                        <option value="統計方式">📊 統計方式</option>
+                        <option value="其他">📝 其他</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">備註說明（選填）</label>
+                    <textarea class="form-textarea" id="taskDescription" placeholder="記錄為什麼想學這個、在哪裡看到的..." style="min-height: 100px;"></textarea>
+                </div>
+
+                <div class="form-group" id="learningResultGroup" style="display: none;">
+                    <label class="form-label">📖 我的學習成果</label>
+                    <textarea class="form-textarea" id="taskLearningResult" placeholder="記錄你查找到的資料、學習到的內容..." style="min-height: 200px;"></textarea>
+                    <p style="color: var(--warm-gray); font-size: 0.85rem; margin-top: 0.5rem;">
+                        💡 完成學習後，在這裡記錄你查到的完整資料和心得
+                    </p>
+                </div>
+
+                <button type="submit" class="submit-btn" id="taskSubmitBtn">新增到待學習清單</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // ================ Firebase 與全域變數 ================
+        const STORAGE_KEY = 'firebase_config';
+        let auth = null;
+        let database = null; // Realtime Database
+        let currentUser = null;
+        let currentMode = 'notes'; // 'notes' 或 'tasks'
+        let allNotes = [];
+        let allTasks = [];
+        let currentFilter = 'all';
+        let currentHighlights = [];
+        let editingNoteId = null;
+        let editingTaskId = null;
+
+        // ================ DOM 元素 ================
+        const configScreen = document.getElementById('configScreen');
+        const loginScreen = document.getElementById('loginScreen');
+        const appContainer = document.getElementById('appContainer');
+
+        // ================ 啟動流程 ================
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedConfig = localStorage.getItem(STORAGE_KEY);
+            if (savedConfig) {
+                try {
+                    const config = JSON.parse(savedConfig);
+                    initializeFirebase(config);
+                } catch (error) {
+                    showConfigScreen();
+                }
+            } else {
+                showConfigScreen();
+            }
+        });
+
+        function showConfigScreen() {
+            configScreen.style.display = 'flex';
+            loginScreen.style.display = 'none';
+            appContainer.style.display = 'none';
+        }
+
+        // ================ 配置提交 ================
+        document.getElementById('configForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const config = {
+                apiKey: document.getElementById('apiKey').value.trim(),
+                authDomain: document.getElementById('authDomain').value.trim(),
+                projectId: document.getElementById('projectId').value.trim(),
+                storageBucket: document.getElementById('storageBucket').value.trim(),
+                messagingSenderId: document.getElementById('messagingSenderId').value.trim(),
+                appId: document.getElementById('appId').value.trim(),
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            initializeFirebase(config);
+        });
+
+        // ================ Firebase 初始化 ================
+        function initializeFirebase(config) {
+            try {
+                // 確保包含 databaseURL
+                if (!config.databaseURL) {
+                    config.databaseURL = "https://note-3cebc-default-rtdb.asia-southeast1.firebasedatabase.app/";
+                }
+                
+                firebase.initializeApp(config);
+                auth = firebase.auth();
+                database = firebase.database(); // 使用 Realtime Database
+                
+                console.log('✅ Firebase 初始化成功');
+                console.log('Database URL:', config.databaseURL);
+                
+                auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+                    auth.onAuthStateChanged((user) => {
+                        if (user) {
+                            currentUser = user;
+                            console.log('✅ 使用者已登入:', user.uid);
+                            showApp();
+                        } else {
+                            showLoginScreen();
+                        }
+                    });
+                });
+            } catch (error) {
+                console.error('❌ Firebase 初始化失敗:', error);
+                showError('configError', 'Firebase 初始化失敗：' + error.message);
+            }
+        }
+
+        function showLoginScreen() {
+            configScreen.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            appContainer.style.display = 'none';
+        }
+
+        // ================ Google 登入 ================
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                showError('loginError', '登入失敗');
+            }
+        });
+
+        // ================ 重設配置 ================
+        document.getElementById('resetConfigBtn').addEventListener('click', () => {
+            if (confirm('確定要重新設定 Firebase？')) {
+                localStorage.removeItem(STORAGE_KEY);
+                window.location.reload();
+            }
+        });
+
+        // ================ 登出 ================
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            if (confirm('確定要登出嗎？')) {
+                await auth.signOut();
+            }
+        });
+
+        // ================ 顯示主應用 ================
+        function showApp() {
+            configScreen.style.display = 'none';
+            loginScreen.style.display = 'none';
+            appContainer.style.display = 'block';
+            
+            document.getElementById('userName').textContent = currentUser.displayName || currentUser.email;
+            document.getElementById('userAvatar').src = currentUser.photoURL || 
+                `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.displayName || currentUser.email)}&background=8b9d83&color=fff`;
+            
+            loadData();
+            setupModeSwitch();
+            setupEventListeners();
+        }
+
+        // ================ 模式切換 ================
+        function setupModeSwitch() {
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentMode = btn.dataset.mode;
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateUI();
+                    renderContent();
+                });
+            });
+        }
+
+        function updateUI() {
+            const isNotes = currentMode === 'notes';
+            
+            // 更新按鈕文字
+            document.getElementById('addBtnText').textContent = isNotes ? '✨ 新增筆記' : '📌 新增待學習';
+            
+            // 更新分類標題
+            document.getElementById('categoriesTitle').textContent = isNotes ? '筆記分類' : '任務分類';
+            
+            // 更新空狀態
+            document.getElementById('emptyIcon').textContent = isNotes ? '🌾' : '📚';
+            document.getElementById('emptyTitle').textContent = isNotes ? '還沒有筆記' : '沒有待學習項目';
+            document.getElementById('emptyText').textContent = isNotes ? 
+                '點擊「新增筆記」記錄學習重點' : 
+                '點擊「新增待學習」記錄想學的內容';
+            
+            // 更新分類列表
+            renderCategories();
+        }
+
+        // ================ 載入資料 ================
+        async function loadData() {
+            document.getElementById('loading').classList.add('show');
+            console.log('🔄 開始載入資料...');
+            console.log('使用者 UID:', currentUser.uid);
+            
+            try {
+                // 載入筆記 - 從 users/{uid}/notes 讀取
+                const notesRef = database.ref(`users/${currentUser.uid}/notes`);
+                const notesSnapshot = await notesRef.once('value');
+                const notesData = notesSnapshot.val();
+                
+                console.log('📝 筆記原始資料:', notesData);
+                
+                if (notesData) {
+                    allNotes = Object.entries(notesData).map(([id, data]) => ({
+                        id,
+                        ...data
+                    })).sort((a, b) => {
+                        const aTime = a.createdAt || 0;
+                        const bTime = b.createdAt || 0;
+                        return bTime - aTime;
+                    });
+                } else {
+                    allNotes = [];
+                }
+                
+                console.log('✅ 載入筆記:', allNotes.length, '則');
+
+                // 載入待學習任務 - 從 users/{uid}/tasks 讀取
+                const tasksRef = database.ref(`users/${currentUser.uid}/tasks`);
+                const tasksSnapshot = await tasksRef.once('value');
+                const tasksData = tasksSnapshot.val();
+                
+                console.log('📚 任務原始資料:', tasksData);
+                
+                if (tasksData) {
+                    allTasks = Object.entries(tasksData).map(([id, data]) => ({
+                        id,
+                        ...data
+                    })).sort((a, b) => {
+                        const aTime = a.createdAt || 0;
+                        const bTime = b.createdAt || 0;
+                        return bTime - aTime;
+                    });
+                } else {
+                    allTasks = [];
+                }
+                
+                console.log('✅ 載入任務:', allTasks.length, '則');
+
+                renderContent();
+                renderCategories();
+                console.log('✅ 資料載入完成');
+                
+            } catch (error) {
+                console.error('❌ 載入資料錯誤:', error);
+                alert('載入資料失敗：' + error.message);
+                allNotes = [];
+                allTasks = [];
+            } finally {
+                document.getElementById('loading').classList.remove('show');
+            }
+        }
+
+        // ================ 渲染分類 ================
+        function renderCategories() {
+            const isNotes = currentMode === 'notes';
+            const data = isNotes ? allNotes : allTasks;
+            
+            let html = `
+                <div class="category-item active" data-category="all">
+                    <span class="category-name">全部${isNotes ? '筆記' : '項目'}</span>
+                    <span class="category-count">${data.length}</span>
+                </div>
+            `;
+
+            if (!isNotes) {
+                // 待學習清單的特殊分類
+                const pending = data.filter(t => !t.completed).length;
+                const completed = data.filter(t => t.completed).length;
+                html += `
+                    <div class="category-item" data-category="pending">
+                        <span class="category-name">⏳ 未完成</span>
+                        <span class="category-count">${pending}</span>
+                    </div>
+                    <div class="category-item" data-category="completed">
+                        <span class="category-name">✅ 已完成</span>
+                        <span class="category-count">${completed}</span>
+                    </div>
+                `;
+            }
+
+            const categories = ['家政學習', '教學方法', '課程重點', '統計方式', '其他'];
+            const icons = { '家政學習': '🏠', '教學方法': '📚', '課程重點': '💡', '統計方式': '📊', '其他': '📝' };
+            
+            categories.forEach(cat => {
+                const count = data.filter(item => item.category === cat).length;
+                html += `
+                    <div class="category-item" data-category="${cat}">
+                        <span class="category-name">${icons[cat]} ${cat}</span>
+                        <span class="category-count">${count}</span>
+                    </div>
+                `;
+            });
+
+            document.getElementById('categoriesList').innerHTML = html;
+
+            // 綁定事件
+            document.querySelectorAll('.category-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    currentFilter = item.dataset.category;
+                    document.querySelectorAll('.category-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                    
+                    const categoryNames = {
+                        'all': `全部${isNotes ? '筆記' : '項目'}`,
+                        'pending': '⏳ 未完成',
+                        'completed': '✅ 已完成',
+                        '家政學習': '🏠 家政學習',
+                        '教學方法': '📚 教學方法',
+                        '課程重點': '💡 課程重點',
+                        '統計方式': '📊 統計方式',
+                        '其他': '📝 其他'
+                    };
+                    document.getElementById('contentTitle').textContent = categoryNames[currentFilter];
+                    
+                    renderContent();
+                });
+            });
+        }
+
+        // ================ 渲染內容 ================
+        function renderContent() {
+            const isNotes = currentMode === 'notes';
+            const data = isNotes ? allNotes : allTasks;
+            
+            let filtered = data;
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'pending') {
+                    filtered = data.filter(t => !t.completed);
+                } else if (currentFilter === 'completed') {
+                    filtered = data.filter(t => t.completed);
+                } else {
+                    filtered = data.filter(item => item.category === currentFilter);
+                }
+            }
+
+            const grid = document.getElementById('contentGrid');
+            const empty = document.getElementById('emptyState');
+            document.getElementById('contentCount').textContent = filtered.length;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+
+            if (isNotes) {
+                grid.innerHTML = filtered.map(note => `
+                    <div class="note-card" data-id="${note.id}">
+                        <div class="card-actions">
+                            <button class="action-btn edit-note" data-id="${note.id}" title="編輯">
+                                ✏️
+                            </button>
+                            <button class="action-btn delete delete-note" data-id="${note.id}" title="刪除">
+                                🗑️
+                            </button>
+                        </div>
+                        <div class="note-category">${getCategoryIcon(note.category)} ${note.category}</div>
+                        <h3 class="note-title">${escapeHtml(note.title)}</h3>
+                        <p class="note-content">${escapeHtml(note.content)}</p>
+                        ${note.highlights && note.highlights.length > 0 ? `
+                            <div class="note-highlights">
+                                ${note.highlights.map(h => `<span class="highlight-tag">#${escapeHtml(h)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="note-meta">
+                            <span>${formatDate(note.createdAt)}</span>
+                            <span class="ai-badge">✨ AI</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                // 綁定編輯按鈕
+                document.querySelectorAll('.edit-note').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editNote(btn.dataset.id);
+                    });
+                });
+
+                // 綁定刪除按鈕
+                document.querySelectorAll('.delete-note').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteNote(btn.dataset.id);
+                    });
+                });
+
+                // 點擊卡片也可以編輯
+                document.querySelectorAll('.note-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // 如果點擊的是按鈕，不觸發卡片點擊
+                        if (e.target.closest('.action-btn')) return;
+                        editNote(card.dataset.id);
+                    });
+                });
+            } else {
+                grid.innerHTML = filtered.map(task => `
+                    <div class="task-card ${task.completed ? 'completed' : ''}" data-id="${task.id}">
+                        <div class="task-actions">
+                            <button class="action-btn edit-task" data-id="${task.id}" title="編輯">
+                                ✏️
+                            </button>
+                            <button class="action-btn delete delete-task" data-id="${task.id}" title="刪除">
+                                🗑️
+                            </button>
+                        </div>
+                        <div class="task-checkbox-wrapper">
+                            <div class="task-checkbox ${task.completed ? 'checked' : ''}" data-id="${task.id}">
+                                <span class="checkmark">✓</span>
+                            </div>
+                        </div>
+                        <div class="task-content-wrapper">
+                            <div class="task-header">
+                                <h3 class="task-title">${escapeHtml(task.title)}</h3>
+                                <div class="task-category">${getCategoryIcon(task.category)} ${task.category}</div>
+                            </div>
+                            ${task.description ? `<p class="task-description">${escapeHtml(task.description)}</p>` : ''}
+                            ${task.learningResult ? `
+                                <div style="margin-top: 1rem; padding: 1rem; background: rgba(139, 157, 131, 0.06); border-radius: 8px; border-left: 3px solid var(--sage);">
+                                    <div style="font-weight: 600; color: var(--sage-dark); margin-bottom: 0.5rem; font-size: 0.9rem;">📖 學習成果</div>
+                                    <p style="color: var(--charcoal); font-size: 0.9rem; line-height: 1.7; white-space: pre-wrap;">${escapeHtml(task.learningResult)}</p>
+                                </div>
+                            ` : ''}
+                            <div class="task-footer">
+                                <span class="task-date">${formatDate(task.createdAt)}</span>
+                                <span class="task-status ${task.completed ? 'completed' : 'pending'}">
+                                    ${task.completed ? '✅ 已完成' : '⏳ 待學習'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // 綁定勾選事件
+                document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        toggleTaskComplete(checkbox.dataset.id);
+                    });
+                });
+
+                // 綁定編輯按鈕
+                document.querySelectorAll('.edit-task').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        editTask(btn.dataset.id);
+                    });
+                });
+
+                // 綁定刪除按鈕
+                document.querySelectorAll('.delete-task').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteTask(btn.dataset.id);
+                    });
+                });
+
+                // 點擊卡片編輯
+                document.querySelectorAll('.task-card').forEach(card => {
+                    card.addEventListener('click', (e) => {
+                        // 如果點擊的是按鈕或勾選框，不觸發卡片點擊
+                        if (e.target.closest('.action-btn') || e.target.closest('.task-checkbox')) return;
+                        editTask(card.dataset.id);
+                    });
+                });
+            }
+        }
+
+        // ================ 切換任務完成狀態 ================
+        async function toggleTaskComplete(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+
+            try {
+                const newStatus = !task.completed;
+                
+                if (newStatus) {
+                    // 從未完成變為完成 → 轉換成筆記
+                    if (confirm(`太棒了！要將「${task.title}」轉換成學習筆記嗎？\n\n轉換後會從待學習清單移除，並加入到學習筆記中。`)) {
+                        console.log('🎓 將任務轉換為筆記:', task.title);
+                        
+                        const now = Date.now();
+                        
+                        // 建立筆記資料
+                        const noteData = {
+                            title: task.title,
+                            category: task.category,
+                            // 合併學習成果和備註作為筆記內容
+                            content: task.learningResult || task.description || `已完成學習：${task.title}`,
+                            highlights: extractKeywords((task.title + ' ' + (task.learningResult || task.description || '')).toLowerCase()),
+                            userId: currentUser.uid,
+                            createdAt: now,
+                            updatedAt: now,
+                            fromTask: true // 標記這是從任務轉換來的
+                        };
+                        
+                        // 新增到筆記
+                        const newNoteRef = database.ref(`users/${currentUser.uid}/notes`).push();
+                        await newNoteRef.set(noteData);
+                        console.log('✅ 已新增為筆記');
+                        
+                        // 從任務列表中刪除
+                        const taskRef = database.ref(`users/${currentUser.uid}/tasks/${id}`);
+                        await taskRef.remove();
+                        console.log('✅ 已從待學習清單移除');
+                        
+                        // 更新本地資料
+                        allTasks = allTasks.filter(t => t.id !== id);
+                        allNotes.unshift({ id: newNoteRef.key, ...noteData });
+                        
+                        renderContent();
+                        renderCategories();
+                        
+                        // 提示使用者
+                        alert('✅ 已轉換為學習筆記！\n\n切換到「學習筆記」模式可以查看。');
+                    }
+                } else {
+                    // 從完成變為未完成（取消勾選）
+                    const now = Date.now();
+                    const updateData = {
+                        completed: false,
+                        completedAt: null,
+                        updatedAt: now
+                    };
+                    
+                    console.log('🔄 取消完成狀態:', id);
+                    const taskRef = database.ref(`users/${currentUser.uid}/tasks/${id}`);
+                    await taskRef.update(updateData);
+                    
+                    task.completed = false;
+                    task.completedAt = null;
+                    task.updatedAt = now;
+                    
+                    renderContent();
+                    renderCategories();
+                }
+            } catch (error) {
+                console.error('❌ 操作失敗:', error);
+                alert('操作失敗：' + error.message);
+            }
+        }
+
+        // ================ 事件監聽器 ================
+        function setupEventListeners() {
+            // 快速新增按鈕
+            document.getElementById('quickAddBtn').addEventListener('click', () => {
+                if (currentMode === 'notes') {
+                    openNoteModal();
+                } else {
+                    openTaskModal();
+                }
+            });
+
+            // 搜尋
+            let searchTimeout;
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => handleSearch(e.target.value), 300);
+            });
+
+            // 筆記模態框
+            document.getElementById('closeNoteModal').addEventListener('click', () => {
+                document.getElementById('noteModal').classList.remove('show');
+            });
+
+            document.getElementById('noteForm').addEventListener('submit', handleNoteSubmit);
+
+            // 任務模態框
+            document.getElementById('closeTaskModal').addEventListener('click', () => {
+                document.getElementById('taskModal').classList.remove('show');
+            });
+
+            document.getElementById('taskForm').addEventListener('submit', handleTaskSubmit);
+
+            // 自動 AI 標籤
+            let contentTimeout;
+            document.getElementById('noteContent').addEventListener('input', (e) => {
+                if (editingNoteId) return;
+                clearTimeout(contentTimeout);
+                const title = document.getElementById('noteTitle').value;
+                const content = e.target.value;
+                if (title && content.length > 50) {
+                    contentTimeout = setTimeout(() => generateAITags(title, content), 2000);
+                }
+            });
+        }
+
+        // ================ 開啟模態框 ================
+        function openNoteModal() {
+            editingNoteId = null;
+            currentHighlights = [];
+            document.getElementById('noteModalTitle').textContent = '新增筆記';
+            document.getElementById('noteForm').reset();
+            document.getElementById('highlightsList').innerHTML = '';
+            document.getElementById('noteModal').classList.add('show');
+        }
+
+        function openTaskModal() {
+            editingTaskId = null;
+            document.getElementById('taskModalTitle').textContent = '新增待學習項目';
+            document.getElementById('taskForm').reset();
+            // 新增時隱藏學習成果欄位
+            document.getElementById('learningResultGroup').style.display = 'none';
+            document.getElementById('taskSubmitBtn').textContent = '新增到待學習清單';
+            document.getElementById('taskModal').classList.add('show');
+        }
+
+        // ================ 刪除筆記 ================
+        async function deleteNote(id) {
+            const note = allNotes.find(n => n.id === id);
+            if (!note) return;
+            
+            if (confirm(`確定要刪除筆記「${note.title}」嗎？\n\n刪除後無法復原！`)) {
+                try {
+                    const noteRef = database.ref(`users/${currentUser.uid}/notes/${id}`);
+                    await noteRef.remove();
+                    
+                    allNotes = allNotes.filter(n => n.id !== id);
+                    renderContent();
+                    renderCategories();
+                    console.log('✅ 刪除成功');
+                } catch (error) {
+                    console.error('❌ 刪除失敗:', error);
+                    alert('刪除失敗：' + error.message);
+                }
+            }
+        }
+
+        // ================ 刪除任務 ================
+        async function deleteTask(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+            
+            if (confirm(`確定要刪除「${task.title}」嗎？\n\n刪除後無法復原！`)) {
+                try {
+                    const taskRef = database.ref(`users/${currentUser.uid}/tasks/${id}`);
+                    await taskRef.remove();
+                    
+                    allTasks = allTasks.filter(t => t.id !== id);
+                    renderContent();
+                    renderCategories();
+                    console.log('✅ 刪除成功');
+                } catch (error) {
+                    console.error('❌ 刪除失敗:', error);
+                    alert('刪除失敗：' + error.message);
+                }
+            }
+        }
+
+        // ================ 編輯筆記 ================
+        function editNote(id) {
+            const note = allNotes.find(n => n.id === id);
+            if (!note) return;
+            
+            editingNoteId = id;
+            currentHighlights = note.highlights || [];
+            
+            document.getElementById('noteModalTitle').textContent = '編輯筆記';
+            document.getElementById('noteTitle').value = note.title;
+            document.getElementById('noteCategory').value = note.category;
+            document.getElementById('noteContent').value = note.content;
+            
+            renderHighlights();
+            document.getElementById('noteModal').classList.add('show');
+        }
+
+        function editTask(id) {
+            const task = allTasks.find(t => t.id === id);
+            if (!task) return;
+            
+            editingTaskId = id;
+            
+            document.getElementById('taskModalTitle').textContent = '編輯待學習項目';
+            document.getElementById('taskTitle').value = task.title;
+            document.getElementById('taskCategory').value = task.category;
+            document.getElementById('taskDescription').value = task.description || '';
+            document.getElementById('taskLearningResult').value = task.learningResult || '';
+            
+            // 顯示學習成果欄位（編輯時總是顯示）
+            document.getElementById('learningResultGroup').style.display = 'block';
+            document.getElementById('taskSubmitBtn').textContent = '儲存變更';
+            
+            document.getElementById('taskModal').classList.add('show');
+        }
+
+        // ================ AI 標籤生成 ================
+        async function generateAITags(title, content) {
+            const aiGenerating = document.getElementById('aiGenerating');
+            aiGenerating.classList.add('show');
+            
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const keywords = extractKeywords((title + ' ' + content).toLowerCase());
+            currentHighlights = keywords;
+            renderHighlights();
+            aiGenerating.classList.remove('show');
+        }
+
+        function extractKeywords(text) {
+            const stopWords = ['的', '了', '是', '在', '和', '與', '或', '但', '如', '及', '等', '可以', '能夠', '需要', '應該', '我', '你', '他', '她', '它', '們', '這', '那', '有', '會', '都', '也', '就', '要', '說', '對', '為', '從', '個', '所', '而', '於', '以', '上', '下', '中', '到', '用', '會', '得', '不', '沒', '很', '最', '更'];
+            
+            const words = text
+                .replace(/[，。！？；：、"""''（）《》【】]/g, ' ')
+                .split(/\s+/)
+                .filter(word => word.length >= 2 && !stopWords.includes(word));
+            
+            const wordCount = {};
+            words.forEach(word => wordCount[word] = (wordCount[word] || 0) + 1);
+            
+            return Object.entries(wordCount)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([word]) => word);
+        }
+
+        function renderHighlights() {
+            const list = document.getElementById('highlightsList');
+            list.innerHTML = currentHighlights.map((h, i) => `
+                <span class="highlight-item">
+                    #${escapeHtml(h)}
+                    <button type="button" class="remove-highlight" data-index="${i}">×</button>
+                </span>
+            `).join('');
+
+            document.querySelectorAll('.remove-highlight').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentHighlights.splice(parseInt(btn.dataset.index), 1);
+                    renderHighlights();
+                });
+            });
+        }
+
+        // ================ 提交表單 ================
+        async function handleNoteSubmit(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('noteTitle').value;
+            const category = document.getElementById('noteCategory').value;
+            const content = document.getElementById('noteContent').value;
+            
+            const submitBtn = document.getElementById('noteSubmitBtn');
+            const originalBtnText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '儲存中...';
+
+            console.log('🚀 開始儲存筆記...');
+
+            try {
+                // AI 標籤生成
+                if (!editingNoteId && currentHighlights.length === 0) {
+                    console.log('⏳ 生成 AI 標籤...');
+                    await generateAITags(title, content);
+                    console.log('✅ AI 標籤:', currentHighlights);
+                }
+
+                const now = Date.now(); // 使用時間戳記
+                const noteData = {
+                    title,
+                    category,
+                    content,
+                    highlights: currentHighlights,
+                    userId: currentUser.uid,
+                    updatedAt: now
+                };
+
+                if (editingNoteId) {
+                    // 更新現有筆記
+                    console.log('🔄 更新筆記:', editingNoteId);
+                    const noteRef = database.ref(`users/${currentUser.uid}/notes/${editingNoteId}`);
+                    await noteRef.update(noteData);
+                    console.log('✅ 更新成功');
+                    
+                    // 更新本地資料
+                    const index = allNotes.findIndex(n => n.id === editingNoteId);
+                    if (index !== -1) {
+                        allNotes[index] = { ...allNotes[index], ...noteData };
+                    }
+                } else {
+                    // 新增筆記
+                    noteData.createdAt = now;
+                    const newNoteRef = database.ref(`users/${currentUser.uid}/notes`).push();
+                    const newId = newNoteRef.key;
+                    
+                    console.log('➕ 新增筆記，ID:', newId);
+                    await newNoteRef.set(noteData);
+                    console.log('✅ 新增成功');
+                    
+                    // 添加到本地資料
+                    allNotes.unshift({ id: newId, ...noteData });
+                }
+
+                console.log('🎨 更新畫面...');
+                renderContent();
+                renderCategories();
+                document.getElementById('noteModal').classList.remove('show');
+                console.log('🎉 完成！');
+                
+            } catch (error) {
+                console.error('❌ 儲存錯誤:', error);
+                
+                let errorMsg = '儲存失敗！\n\n';
+                if (error.code === 'PERMISSION_DENIED') {
+                    errorMsg += '❌ Realtime Database 權限被拒絕\n\n';
+                    errorMsg += '請檢查 Firebase Database 規則：\n';
+                    errorMsg += '{\n';
+                    errorMsg += '  "rules": {\n';
+                    errorMsg += '    "users": {\n';
+                    errorMsg += '      "$uid": {\n';
+                    errorMsg += '        ".read": "$uid === auth.uid",\n';
+                    errorMsg += '        ".write": "$uid === auth.uid"\n';
+                    errorMsg += '      }\n';
+                    errorMsg += '    }\n';
+                    errorMsg += '  }\n';
+                    errorMsg += '}';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                alert(errorMsg);
+                
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        }
+
+        async function handleTaskSubmit(e) {
+            e.preventDefault();
+            
+            const title = document.getElementById('taskTitle').value;
+            const category = document.getElementById('taskCategory').value;
+            const description = document.getElementById('taskDescription').value;
+            const learningResult = document.getElementById('taskLearningResult').value;
+            
+            const submitBtn = document.getElementById('taskSubmitBtn');
+            const originalBtnText = submitBtn.textContent;
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = '儲存中...';
+
+            console.log('🚀 開始儲存任務...');
+
+            try {
+                const now = Date.now();
+                const taskData = {
+                    title,
+                    category,
+                    description,
+                    learningResult,
+                    userId: currentUser.uid,
+                    updatedAt: now
+                };
+
+                if (editingTaskId) {
+                    // 更新現有任務，保留 completed 狀態
+                    const existingTask = allTasks.find(t => t.id === editingTaskId);
+                    taskData.completed = existingTask ? existingTask.completed : false;
+                    
+                    console.log('🔄 更新任務:', editingTaskId);
+                    const taskRef = database.ref(`users/${currentUser.uid}/tasks/${editingTaskId}`);
+                    await taskRef.update(taskData);
+                    console.log('✅ 更新成功');
+                    
+                    // 更新本地資料
+                    const index = allTasks.findIndex(t => t.id === editingTaskId);
+                    if (index !== -1) {
+                        allTasks[index] = { ...allTasks[index], ...taskData };
+                    }
+                } else {
+                    // 新增任務
+                    taskData.completed = false;
+                    taskData.createdAt = now;
+                    
+                    const newTaskRef = database.ref(`users/${currentUser.uid}/tasks`).push();
+                    const newId = newTaskRef.key;
+                    
+                    console.log('➕ 新增任務，ID:', newId);
+                    await newTaskRef.set(taskData);
+                    console.log('✅ 新增成功');
+                    
+                    // 添加到本地資料
+                    allTasks.unshift({ id: newId, ...taskData });
+                }
+
+                console.log('🎨 更新畫面...');
+                renderContent();
+                renderCategories();
+                document.getElementById('taskModal').classList.remove('show');
+                console.log('🎉 完成！');
+                
+            } catch (error) {
+                console.error('❌ 儲存錯誤:', error);
+                
+                let errorMsg = '儲存失敗！\n\n';
+                if (error.code === 'PERMISSION_DENIED') {
+                    errorMsg += '❌ Realtime Database 權限被拒絕\n\n';
+                    errorMsg += '請檢查 Firebase Database 規則';
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                alert(errorMsg);
+                
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+            }
+        }
+
+        // ================ 搜尋 ================
+        function handleSearch(query) {
+            if (!query.trim()) {
+                renderContent();
+                return;
+            }
+            
+            const searchTerm = query.toLowerCase();
+            const isNotes = currentMode === 'notes';
+            const data = isNotes ? allNotes : allTasks;
+            
+            const results = data.filter(item => 
+                item.title.toLowerCase().includes(searchTerm) ||
+                (item.content && item.content.toLowerCase().includes(searchTerm)) ||
+                (item.description && item.description.toLowerCase().includes(searchTerm)) ||
+                (item.highlights && item.highlights.some(h => h.toLowerCase().includes(searchTerm)))
+            );
+
+            // 重新渲染搜尋結果（簡化版）
+            const grid = document.getElementById('contentGrid');
+            const empty = document.getElementById('emptyState');
+
+            if (results.length === 0) {
+                grid.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+            // 這裡可以重用 renderContent 的邏輯，但用 results 而非 filtered
+        }
+
+        // ================ 輔助函數 ================
+        function getCategoryIcon(category) {
+            const icons = { '家政學習': '🏠', '教學方法': '📚', '課程重點': '💡', '統計方式': '📊', '其他': '📝' };
+            return icons[category] || '📝';
+        }
+
+        function formatDate(timestamp) {
+            if (!timestamp) return '剛剛';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (days === 0) return '今天';
+            if (days === 1) return '昨天';
+            if (days < 7) return `${days} 天前`;
+            return date.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+            setTimeout(() => errorElement.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>
